@@ -21,12 +21,12 @@ class TweetSentimentApp:
     def __init__(self):
         self.tokenizer = Tokenizer()
         self.sent_analyzer = SentimentIntensityAnalyzer()
-        self.positive_words = self.read_word_list('positive_words.txt')
-        self.negative_words = self.read_word_list('negative_words.txt')
+        self.positive_words = self.read_word_list('katapositif.txt')
+        self.negative_words = self.read_word_list('katanegatif.txt')
         # self.neutral_words = self.read_word_list('neutral_words.txt')
-        self.constructive_words = self.read_word_list('constructive_words.txt')
-        self.destructive_words = self.read_word_list('destructive_words.txt')
-        self.agitative_words = set(open('agitative_words.txt').read().splitlines())
+        self.constructive_words = self.read_word_list('katamembangun.txt')
+        self.destructive_words = self.read_word_list('katamerugikan.txt')
+        self.agitative_words = set(open('katakesal.txt').read().splitlines())
         self.max_sequence_length = 100
         # Load your logistic regression model and other necessary components here
         self.multinomial_naive_bayes_model = joblib.load('multinomial_naive_bayes_model.pkl')  # Load your logistic regression model
@@ -79,13 +79,13 @@ class TweetSentimentApp:
         return 0.0  # Default score for non-text values
     def calculate_positive_sentiment_percentage(self, dataframe):
         # Apply sentiment analysis to each tweet
-        dataframe['sentiment_score'] = dataframe['tweets'].apply(lambda tweet: self.get_sentiment_score(tweet))
+        dataframe['sentiment_score'] = dataframe['Ulasan'].apply(lambda tweet: self.get_sentiment_score(tweet))
         # Categorize sentiment into tags
         dataframe['sentiment_tag'] = dataframe['sentiment_score'].apply(self.sentiment_label)
         # Group by user name and sentiment, and count the number of tweets for each combination
-        sentiment_counts = dataframe.groupby(['username', 'sentiment_tag']).size().reset_index(name='count')
+        sentiment_counts = dataframe.groupby(['Nama', 'sentiment_tag']).size().reset_index(name='count')
         # Pivot the sentiment counts dataframe to have sentiments as columns
-        sentiment_pivot = sentiment_counts.pivot(index='username', columns='sentiment_tag', values='count').fillna(0)
+        sentiment_pivot = sentiment_counts.pivot(index='Nama', columns='sentiment_tag', values='count').fillna(0)
         # Calculate the percentage of positive sentiment for each user
         sentiment_pivot['total_tweets'] = sentiment_pivot.sum(axis=1)
         sentiment_pivot['positive_percentage'] = (sentiment_pivot['positive'] / sentiment_pivot['total_tweets']) * 100
@@ -93,7 +93,7 @@ class TweetSentimentApp:
     
     def plot_sentiments_by_politician(self, df):
         
-        politician_sentiments = df.groupby('username')['sentiment_tag'].value_counts(normalize=True).unstack().fillna(0)
+        politician_sentiments = df.groupby('Nama')['sentiment_tag'].value_counts(normalize=True).unstack().fillna(0)
         # Plot bar chart for sentiments
         politician_sentiments.plot(kind='bar', figsize=(10, 6))
         plt.xlabel('Politician')
@@ -104,7 +104,7 @@ class TweetSentimentApp:
         
     def find_most_active_politician(self, df):
 
-        politician_tweet_counts = df['username'].value_counts()
+        politician_tweet_counts = df['Nama'].value_counts()
         most_active_politician = politician_tweet_counts.idxmax()
         num_tweets = politician_tweet_counts.max()
         return most_active_politician, num_tweets
@@ -116,8 +116,8 @@ class TweetSentimentApp:
     def analyze_tweets_sentiment(self, dataframe):
         mentions = []
         for index, row in dataframe.iterrows():
-            username = row['username']
-            tweet = str(row['tweets'])  # Convert to string to handle potential non-string values
+            username = row['Nama']
+            tweet = str(row['Ulasan'])  # Convert to string to handle potential non-string values
 
             blob = TextBlob(tweet)
             for word in blob.words:
@@ -135,24 +135,24 @@ class TweetSentimentApp:
     def sentiment_count(self, dataframe):
         
         # Group the dataframe by user name and count the number of tweets
-        tweet_count_df = dataframe.groupby('sentiment_tag')['tweets'].count().reset_index()
+        tweet_count_df = dataframe.groupby('sentiment_tag')['Ulasan'].count().reset_index()
         
         # Find the user with the highest tweet count
-        user_with_highest_tweet_count = tweet_count_df.loc[tweet_count_df['tweets'].idxmax()]
+        user_with_highest_tweet_count = tweet_count_df.loc[tweet_count_df['Ulasan'].idxmax()]
         
         # Print the user name and highest tweet count
         user_name = user_with_highest_tweet_count['sentiment_tag']
-        tweet_count = user_with_highest_tweet_count['tweets']
+        tweet_count = user_with_highest_tweet_count['Ulasan']
         print(f"Overall Sentiment Count: {user_name}, Tweet Count: {tweet_count}")
         
         # Plot tweet count of each leader
-        plt.bar(tweet_count_df['sentiment_tag'], tweet_count_df['tweets'], color=['red', 'green', 'blue'], width=0.5)
+        plt.bar(tweet_count_df['sentiment_tag'], tweet_count_df['Ulasan'], color=['red', 'green', 'blue'], width=0.5)
         plt.xlabel('Sentiment')
         plt.ylabel('Sentiment Count')
         plt.title('Overall Sentiment Count')
         plt.xticks(rotation=45)
         # Show the tweet count on top of each bar
-        for i, count in enumerate(tweet_count_df['tweets']):
+        for i, count in enumerate(tweet_count_df['Ulasan']):
             plt.text(i, count + 5, str(count), ha='center', va='bottom', fontsize=10)
         
         plt.tight_layout()
@@ -163,8 +163,8 @@ class TweetSentimentApp:
         user_word_frequency = {}
 
         for index, row in df.iterrows():
-            username = row['username']
-            tweet = str(row['tweets'])  # Convert to string to handle potential non-string values
+            username = row['Nama']
+            tweet = str(row['Ulasan'])  # Convert to string to handle potential non-string values
 
             blob = TextBlob(tweet)
             for word in blob.words:
@@ -202,8 +202,8 @@ class TweetSentimentApp:
         sentiment_percentages = {}
 
         for index, row in df.iterrows():
-            username = row['username']
-            tweet = str(row['tweets'])  # Convert to string to handle potential non-string values
+            username = row['Nama']
+            tweet = str(row['Ulasan'])  # Convert to string to handle potential non-string values
 
             blob = TextBlob(tweet)
             positive_count = 0
@@ -233,7 +233,7 @@ class TweetSentimentApp:
         politician_sentiment_count = {}
 
         for index, row in df.iterrows():
-            username = row['username']
+            username = row['Nama']
             sentiment = row['sentiment_tag']
 
             if sentiment == 'positive':
@@ -249,24 +249,24 @@ class TweetSentimentApp:
 # =============================================================================================
     def find_user_with_highest_tweet_count(self, dataframe):
         # Group the dataframe by user name and count the number of tweets
-        tweet_count_df = dataframe.groupby('username')['tweets'].count().reset_index()
+        tweet_count_df = dataframe.groupby('Nama')['Ulasan'].count().reset_index()
         
         # Find the user with the highest tweet count
-        user_with_highest_tweet_count = tweet_count_df.loc[tweet_count_df['tweets'].idxmax()]
+        user_with_highest_tweet_count = tweet_count_df.loc[tweet_count_df['Ulasan'].idxmax()]
         
         # Print the user name and highest tweet count
-        user_name = user_with_highest_tweet_count['username']
-        tweet_count = user_with_highest_tweet_count['tweets']
+        user_name = user_with_highest_tweet_count['Nama']
+        tweet_count = user_with_highest_tweet_count['Ulasan']
         st.write(f"#### Highest Tweet Count: {user_name}, Tweet Count: {tweet_count}")
         
         # Plot tweet count of each leader
-        plt.bar(tweet_count_df['username'], tweet_count_df['tweets'], color=['red', 'green', 'blue'], width=0.3)
+        plt.bar(tweet_count_df['Nama'], tweet_count_df['Ulasan'], color=['red', 'green', 'blue'], width=0.3)
         plt.xlabel('Politician')
         plt.ylabel('Tweet Count')
         plt.title('Tweet Count of Each Leader')
         plt.xticks(rotation=45)
         # Show the tweet count on top of each bar
-        for i, count in enumerate(tweet_count_df['tweets']):
+        for i, count in enumerate(tweet_count_df['Ulasan']):
             plt.text(i, count + 5, str(count), ha='center', va='bottom', fontsize=10)
         
         plt.tight_layout()
@@ -286,8 +286,8 @@ class TweetSentimentApp:
         agitating_politicians = {}
 
         for index, row in dataframe.iterrows():
-            username = row['username']
-            tweet = row['tweets']
+            username = row['Nama']
+            tweet = row['Ulasan']
 
             # Handle non-string values in tweet column
             if not isinstance(tweet, str):
@@ -338,8 +338,8 @@ class TweetSentimentApp:
         politician_scores = {}
 
         for index, row in dataframe.iterrows():
-            username = row['username']
-            tweet = str(row['tweets'])
+            username = row['Nama']
+            tweet = str(row['Ulasan'])
 
             constructive_count = sum(1 for word in tweet.split() if word in constructive_words)
             destructive_count = sum(1 for word in tweet.split() if word in destructive_words)
@@ -362,13 +362,13 @@ class TweetSentimentApp:
     # ====================================================================================
     def generate_wordclouds_for_each_user(self, dataframe):
         for sentiment in ['positive', 'negative']:
-            for username in dataframe['username'].unique():
+            for username in dataframe['Nama'].unique():
                 words = self.get_words_by_sentiment(dataframe, username, sentiment)
                 if words:
                     self.plot_wordcloud(username, sentiment, words)
 
     def get_words_by_sentiment(self, dataframe, username, sentiment):
-        words = ' '.join(dataframe[(dataframe['username'] == username) & (dataframe['sentiment_tag'] == sentiment)]['cleaned_text'])
+        words = ' '.join(dataframe[(dataframe['Nama'] == username) & (dataframe['sentiment_tag'] == sentiment)]['cleaned_text'])
         return words
 
     def plot_wordcloud(self, username, sentiment, words):
@@ -383,25 +383,25 @@ class TweetSentimentApp:
         st.image(f"data:image/png;base64,{image_str}", caption=f'{sentiment.title()} Word Cloud for {username}', use_column_width=True)
     # ===================================================================================================================
     def run(self):
-        st.title('Tweet Sentiment Analysis')
-        st.write("### Analyze Sentiment for a Single User Input")
-        user_input = st.text_area("Enter a tweet for sentiment analysis:")
-        if st.button("Analyze Sentiment"):
+        st.title('WORD SENTIMENT ANALYZER')
+        st.write("### Analisis sentimen masukan kata")
+        user_input = st.text_area("Masukkan komentar :")
+        if st.button("Analisis"):
             if user_input:
                 cleaned_input, sentiment_score, sentiment_tag, predicted_sentiment_label = self.predict_single_user_sentiment(user_input)
-                single_user_sentiment_df = pd.DataFrame({'User Input': [cleaned_input],
-                                                         'Sentiment Score': [sentiment_score],
-                                                         'Sentiment Tag': [sentiment_tag],
-                                                         'Predicted Sentiment Label': [predicted_sentiment_label],
+                single_user_sentiment_df = pd.DataFrame({'Kalimat': [cleaned_input],
+                                                         'Compound': [sentiment_score],
+                                                         'Sentimen': [sentiment_tag],
+                                                         'Prediksi Sentimen': [predicted_sentiment_label],
                                                          # "agitated words": [self.get_agitation_keywords(user_input)],
         })
                 st.dataframe(single_user_sentiment_df)
             else:
-                st.warning("Please enter a tweet for sentiment analysis.")    
+                st.warning("Masukkan kata terlebih dahulu !")    
 
-        st.write("### Upload a file to Analyze Sentiment")
-        st.write("Column name should be 'tweets' and 'username' for multiuser tweets sentiment")
-        uploaded_file = st.file_uploader('Upload a file', type=['csv', 'xlsx'])
+        st.write("### Analisis sentimen upload file CSV-XLSX")
+        st.write("Kolom pada file harus dengan 'Nama' dan 'Ulasan' untuk proses analisis")
+        uploaded_file = st.file_uploader('Upload file', type=['csv', 'xlsx'])
 
         if uploaded_file is not None:
             if uploaded_file.type == 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':  # XLSX
@@ -411,7 +411,7 @@ class TweetSentimentApp:
 
             
             # =========================================================================================
-            df['cleaned_text'] = df['tweets'].apply(self.clean_text)
+            # df['cleaned_text'] = df['tweets'].apply(self.clean_text)
             df['sentiment_score'], df['sentiment_tag'] = zip(*df['cleaned_text'].apply(self.analyze_sentiment))
             # df['predicted_sentiment'] = df['cleaned_text'].apply(self.predict_sentiment)
             # df['predicted_sentiment_label'] = df['predicted_sentiment'].apply(self.sentiment_label)
@@ -419,11 +419,11 @@ class TweetSentimentApp:
             st.set_option('deprecation.showPyplotGlobalUse', False)
             plt.figure(figsize=(8, 6))
             plt.hist(df['sentiment_score'], bins=20, color='green', alpha=0.7)
-            plt.xlabel('Sentiment Score')
-            plt.ylabel('Frequency')
-            plt.title('Sentiment Distribution')
+            plt.xlabel('Compound')
+            plt.ylabel('Frekuensi')
+            plt.title('Distribusi Nilai Sentimen')
             st.pyplot()
-            st.write("### Data Content")
+            st.write("### Tabel hasil")
             st.dataframe(df)
 
             # df_with_topics = analyzer.perform_topic_modeling_and_analysis(df)
@@ -510,10 +510,10 @@ class TopicModelingAnalyzer:
 
     def perform_topic_modeling_and_analysis(self, df):
         # Fill missing values in the 'tweets' column with an empty string
-        df['tweets'].fillna('', inplace=True)
+        df['Ulasan'].fillna('', inplace=True)
         
         # Transform the text data using the loaded vectorizer
-        tfidf_matrix = self.tfidf_vectorizer.transform(df['tweets'])
+        tfidf_matrix = self.tfidf_vectorizer.transform(df['Ulasan'])
 
         # Fit LDA for topic modeling
         self.lda.fit(tfidf_matrix)
@@ -549,16 +549,16 @@ class MultiuserTweetSentimentApp(TweetSentimentApp):
         dataframe['predicted_sentiment_label'] = dataframe['sentiment_score'].apply(self.sentiment_label)
 
         # Calculate sentiment distribution and add it to the DataFrame
-        sentiment_distribution = dataframe.groupby(['username', 'sentiment_tag']).size()  # Group by user and sentiment tag
+        sentiment_distribution = dataframe.groupby(['Nama', 'sentiment_tag']).size()  # Group by user and sentiment tag
         sentiment_distribution = sentiment_distribution.reset_index(name='count')
-        total_tweets = sentiment_distribution.groupby('username')['count'].sum()
+        total_tweets = sentiment_distribution.groupby('Nama')['count'].sum()
         sentiment_distribution['percentage'] = (sentiment_distribution['count'] / total_tweets) * 100
 
         # Calculate topic distribution and add it to the DataFrame (if 'topics' column exists)
         if 'topics' in dataframe.columns:
-            topic_distribution = dataframe.groupby(['username', 'topics']).size()  # Group by user and topic
+            topic_distribution = dataframe.groupby(['Nama', 'topics']).size()  # Group by user and topic
             topic_distribution = topic_distribution.reset_index(name='count')
-            total_topics = topic_distribution.groupby('username')['count'].sum()
+            total_topics = topic_distribution.groupby('Nama')['count'].sum()
             topic_distribution['percentage'] = (topic_distribution['count'] / total_topics) * 100
 
             return dataframe, sentiment_distribution, topic_distribution
@@ -584,14 +584,14 @@ class MultiuserTweetSentimentApp(TweetSentimentApp):
             st.pyplot()  # Use st.pyplot() to display the plot in Streamlit
 
     def run_multiuser_analysis(self, dataframe):
-        if 'username' not in dataframe.columns or 'sentiment_tag' not in dataframe.columns:
+        if 'Nama' not in dataframe.columns or 'sentiment_tag' not in dataframe.columns:
             st.warning("The input dataframe does not contain necessary columns.")
             return
 
         dataframe, sentiment_distribution, topic_distribution = self.analyze_multiuser_behavior(dataframe)
 
         # Plot Sentiment Distribution for Each User
-        for user, sentiment_dist in sentiment_distribution.groupby('username'):
+        for user, sentiment_dist in sentiment_distribution.groupby('Nama'):
             fig, ax = plt.subplots()
             ax.bar(sentiment_dist['sentiment_tag'], sentiment_dist['percentage'])
             ax.set_xlabel('Sentiment')
@@ -601,7 +601,7 @@ class MultiuserTweetSentimentApp(TweetSentimentApp):
 
         # Plot Topic Distribution for Each User (if 'topics' column exists in the DataFrame)
         if 'topics' in dataframe.columns:
-            for user, topic_dist in topic_distribution.groupby('username'):
+            for user, topic_dist in topic_distribution.groupby('Nama'):
                 fig, ax = plt.subplots()
                 ax.bar(topic_dist['topics'], topic_dist['percentage'])
                 ax.set_xlabel('Dominant Topic')
